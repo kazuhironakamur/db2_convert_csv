@@ -133,7 +133,7 @@ Class PSExcel {
 
     Quit() {
         try {
-            $this.b.Close($True)
+            $this.b.Close($False)
         }
         catch {
             Write-Error "ファイルを正常に閉じることができませんでした。"
