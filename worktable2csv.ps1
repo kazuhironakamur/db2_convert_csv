@@ -125,9 +125,10 @@ ORDER BY COLNO
     foreach ($env in @('genkou', 'cloud')) {
         $query = @"
 SELECT * FROM $table_name WHERE flssno = '$($settings.$env.flssno)'
-ORDER BY $($order_keys -join ",")
 "@
-
+        
+        if ($order_keys.length -gt 0) { $query += "`norder by $($order_keys -join ",")" }
+        
         $dump = execute_query $query $env $file_headers
 
         # 最終的なCSVファイルを作成する

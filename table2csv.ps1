@@ -130,8 +130,9 @@ order by colno
         $query = @"
 select * from $table_name where ausr__ = '$($timestamps.$env.user_id)' and awid__ = '$($timestamps.$env.session_id)' 
 and addy__ = '$($timestamps.$env.insert_date)' and addb__ = '$($timestamps.$env.insert_time)'
-order by $($order_keys -join ",")
 "@
+
+        if ($order_keys.length -gt 0) { $query += "`norder by $($order_keys -join ",")" }
 
         $dump = execute_query $query $env $file_headers
 

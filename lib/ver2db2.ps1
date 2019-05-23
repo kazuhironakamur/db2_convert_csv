@@ -17,7 +17,7 @@ for read only;
         error "ERROR: DB2へのクエリ発行に失敗しました。"
         error ""
         error "エラー内容 :"
-        error $(Get-Content temporary_stdout.txt)
+        error $(Get-Content "$($timestamp)_temporary_stdout.txt")
         error ""
         error "接続情報 :"
         error "環境: $env"
