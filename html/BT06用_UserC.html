@@ -1,0 +1,56 @@
+﻿<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<!-- saved from url=(0014)about:internet -->
+<html xmlns="http://www.w3.org/1999/xhtml" lang="ja" xml:lang="ja">
+<head>
+<meta http-equiv="X-UA-Compatible" content="IE=8" />
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<title>イーサポートリンクシステム 検証環境 セッション起動メニュー</title>
+<script type="text/javascript">
+var location_url = window.location.href;
+var filename = location_url.match(".+/(.+?)\.[a-z]+([\?#;].*)?$")[1];
+var user_code = filename.match(/(?:User)([A-Z])/)[1];
+
+var S1 = { windowObj : null, ssnId : user_code + 'G' };
+var S2 = { windowObj : null, ssnId : user_code + 'C' };
+var GENKOU_URL = "http://10.250.11.101:9085/";
+var CLOUD_URL = "http://10.250.11.101:9085/";
+
+function OpenSnWindow(Sn) {
+
+  var terminalId = document.getElementById('terminalId').innerHTML
+  
+  var regex1 = RegExp('.G');
+  
+  if (regex1.test(Sn.ssnId)) {
+    var url = GENKOU_URL;
+  }
+  else {
+    var url = CLOUD_URL;
+  }
+  
+  var urlconst = "esupportlink/login/launcherIndex?";
+  var featuresMOTW="location=no, directories=no, menubar=no, status=yes, scrollbars=yes, resizable=yes, toolbar=no, left=0, width=1366, height=680";
+
+  // Mark of the Web(MOTW) -> 「saved from url=(0014)about:internet」を指定すると window#open の戻り値が戻らなくなります。
+  // ゆえに、同じセッションウィンドウが沢山開いてしまいます。
+  // 他には、ウインドウのサイズがデスクトップからはみ出さなくなる、URLが表示されるようになる等の動作になります。
+  if (!Sn.windowObj || Sn.windowObj.closed) {
+        // alert(Sn.ssnId + "ウィンドウをオープンします。！");
+        Sn.windowObj = window.open(url + urlconst + "ssnId=" + Sn.ssnId + "&terminalId=" + terminalId + "", Sn.ssnId, featuresMOTW); //新しいウィンドウを開く
+  } else {
+    alert("既に" + Sn.ssnId + "ウィンドウが開いています。！");
+  }
+  // Sn.windowObj.focus();
+}
+</script>
+</head>
+<body>
+<div>検証環境 セッション起動メニュー<label style="margin-left:2em;">端末ID：</label><span id="terminalId">ESL09</span></div>
+<hr>
+<div style="margin-top:2em;margin-left:3em;">
+■<a href="javascript:OpenSnWindow(S1);">端末セッションID：S1</a><br>
+<br>
+■<a href="javascript:OpenSnWindow(S2);">端末セッションID：S2</a><br>
+</div>
+</body>
+</html>
