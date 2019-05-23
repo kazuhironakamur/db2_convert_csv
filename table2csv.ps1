@@ -59,7 +59,8 @@ select distinct ausr__, awid__, addy__, addb__
 from $table_name
 where ausr__ = '$($settings.$env.user_id)'
 and   awid__ = '$($settings.$env.session_id)'
-and   addy__ = current date order by addy__ desc, addb__ desc
+and   addy__ = current date
+order by addy__ desc, addb__ desc
 fetch first 1 rows only
 "@
 
