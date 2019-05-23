@@ -2,14 +2,16 @@
 . .\lib\ver2tables.ps1
 
 function execute_query($query, $env, $headers) {
+    $timestamp = get-date -format "yyyyMMdd_HHmmss_ffffff"
+    
     $query = @"
 connect to $($settings.$env.odbc_name) user $($settings.$env.conn_user) using $($settings.$env.conn_pass);
-export to temporary_dump.csv of del
+export to $($timestamp)_temporary_dump.csv of del
 $query
 for read only;
 "@
-    $query | Out-File -Encoding default temporary.sql
-    db2cmd /c /w /i db2 -tvf temporary.sql | Out-File -Encoding default temporary_stdout.txt
+    $query | Out-File -Encoding default "$($timestamp)_temporary.sql"
+    db2cmd /c /w /i db2 -tvf "$($timestamp)_temporary.sql" | Out-File -Encoding default "$($timestamp)_temporary_stdout.txt"
 
     if($? -eq $False) {
         error "ERROR: DB2へのクエリ発行に失敗しました。"
@@ -27,7 +29,7 @@ for read only;
         exit -1
     }
 
-    $dump = import-csv "temporary_dump.csv" -Header $headers -Encoding default
+    $dump = import-csv "$($timestamp)_temporary_dump.csv" -Header $headers -Encoding default
     if($dump.count -eq 0) {
         error "ERROR: データ件数が0件です。"
         error ""
@@ -41,7 +43,7 @@ for read only;
         exit -1
     }
 
-    remove-item temporary*
+    remove-item "$($timestamp)_temporary*"
 
     return $dump
 }
@@ -136,9 +138,14 @@ function read_table_remarks() {
     while ($True) {
         $table_name = read-host "検索するテーブル名を入力してください "
         
+        # テーブル名が入力されなかった場合、後続の処理を続行するように変更
+        #if ($table_name -eq "") {
+        #    Write-Host -ForegroundColor Red "テーブル名は必須です。"
+        #    continue
+        #}
+
         if ($table_name -eq "") {
-            Write-Host -ForegroundColor Red "テーブル名は必須です。"
-            continue
+            return ""
         }
 
         $found_tables = search_table_remarks $table_name

@@ -1,6 +1,6 @@
 $ErrorActionPreference = "Stop"
 
-. .\settings.ps1
+. .\_settings.ps1
 . .\lib\display.ps1
 . .\lib\excel.ps1
 . .\lib\ver2app.ps1
@@ -11,8 +11,24 @@ $compare_tool_path = ".\コンペアツール\コンペアチェック表作成ツールＤＬ_縦比較版
 
 $Host.ui.RawUI.WindowTitle = "WORKテーブル出力用"
 
-info "WORKテーブル出力処理を開始します。"
 while ($true) {
+    ##########################################################################
+    info "テーブル検索処理を開始します。"
+    ##########################################################################
+    while ($true) {
+        $found_tables = read_table_remarks
+
+        if ($found_tables -eq "") { break }
+
+        $found_tables | format-table -AutoSize -Property type, name, remarks
+
+        info "検索処理が終了しました。"
+        info "終了する場合は、テーブル名を入力せずに[Enter]キーを押下してください。"
+    }
+
+    ##########################################################################
+    info "WORKテーブル出力処理を開始します。"
+    ##########################################################################
     $table_name = read_table_name
     $table_display_name = get_table_display_name $table_name
     Write-Host "指定されたテーブルのテーブル名は 【 $table_display_name 】 です。"
@@ -125,8 +141,7 @@ ORDER BY $($order_keys -join ",")
 
         $output_file_path.add($env, $output_file)
 
-        # Office365のExcelだとsjisのcsvは文字化けしたのでutf8を指定
-        $dump | Export-Csv $output_file -Encoding utf8 -NoTypeInformation
+        $dump | Export-Csv $output_file -Encoding Default -NoTypeInformation
     }
 
     ##########################################################################
