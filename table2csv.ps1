@@ -11,6 +11,8 @@ $compare_tool_path = ".\コンペアツール\コンペアチェック表作成ツールＤＬ_縦比較版
 
 $Host.ui.RawUI.WindowTitle = "テーブル出力用"
 
+$function_id = $null
+
 while ($true) {
     ##########################################################################
     info "テーブル検索処理を開始します。"
@@ -33,7 +35,7 @@ while ($true) {
     $table_display_name = get_table_display_name $table_name
     Write-Host "指定されたテーブルのテーブル名は 【 $table_display_name 】 です。"
 
-    $function_id = read_function_id
+    $function_id = read_function_id $function_id
     $function_name = get_function_name $function_id
     Write-Host "指定された機能IDの機能名は 【 $function_name 】 です。"
 
@@ -140,7 +142,7 @@ and addy__ = '$($timestamps.$env.insert_date)' and addb__ = '$($timestamps.$env.
         $evidence_dir = "$($function_id)_$($function_name)\$($pattern_no)\"
         $work_dir = "$($evidence_dir)\WORK\$env" -replace "genkou", "現行" -replace "cloud", "クラウド"
         create_directory $work_dir
-        create_directory $("$evidence_dir\エビデンス\$env" -replace "genkou", "現行" -replace "cloud", "クラウド")
+        create_directory $("$evidence_dir\エビデンス\$env" -replace "genkou", "01_現行" -replace "cloud", "02_クラウド")
 
         $compare_target_file = "$($work_dir)\$($pattern_no)_$($table_name).csv"
 
@@ -161,7 +163,7 @@ and addy__ = '$($timestamps.$env.insert_date)' and addb__ = '$($timestamps.$env.
     $compare_target_genkou_file_full_path = Convert-Path ".\$($compare_target_files.genkou)"
     $compare_target_cloud_file_full_path  = Convert-Path ".\$($compare_target_files.cloud)"
 
-    $output_result_full_path = "$(Convert-Path $evidence_dir)エビデンス"
+    $output_result_full_path = "$(Convert-Path $evidence_dir)エビデンス\03_コンペア"
 
     if ($(test-path -PathType Container $output_result_full_path) -eq $False) { new-item -ItemType Directory $output_result_full_path | out-null }
 

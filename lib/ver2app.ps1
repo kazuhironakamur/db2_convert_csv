@@ -22,12 +22,21 @@ function function_id_is_exist($f_id) {
     return $True
 }
 
-function read_function_id() {
-    while($True) {
-        $function_id = read-host "対象の機能IDを入力してください (X_XX_0000) "
+function read_function_id($input_function_id) {
+    while ($True) {
+        $example = if ($input_function_id -ne $null) {
+            "入力を省略すると直近の機能ID 【$input_function_id】 を使用します。 (X_XX_0000) "
+        }
+        else {
+            '(X_XX_0000)'
+        }
+        
+        $function_id = read-host "対象の機能IDを入力してください。$example "
         $function_id = $function_id.trim().ToUpper()
 
         if ($function_id -eq "") {
+            if ($input_function_id -ne $null) { return $input_function_id }
+
             Write-Host -ForegroundColor Red "機能IDは必須です。"
             continue
         }
