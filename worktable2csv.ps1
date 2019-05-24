@@ -122,7 +122,7 @@ ORDER BY COLNO
     ##########################################################################
     info "対象テーブルをCSV化します。"
     ##########################################################################
-    $output_file_path = New-Object System.Collections.Hashtable
+    $compare_target_files = New-Object System.Collections.Hashtable
 
     foreach ($env in @('genkou', 'cloud')) {
         $query = @"
@@ -130,21 +130,20 @@ SELECT * FROM $table_name WHERE flssno = '$($settings.$env.flssno)'
 "@
         
         if ($order_keys.length -gt 0) { $query += "`norder by $($order_keys -join ",")" }
-        
+
         $dump = execute_query $query $env $file_headers
 
         # 最終的なCSVファイルを作成する
-        $function_dir = "$($function_id)_$($function_name)"
-        if ($(test-path -PathType Container $function_dir) -eq $False) { new-item -ItemType Directory $function_dir | out-null }
+        $evidence_dir = "$($function_id)_$($function_name)\$($pattern_no)\"
+        $work_dir = "$($evidence_dir)\WORK\$env" -replace "genkou", "現行" -replace "cloud", "クラウド"
+        create_directory $work_dir
+        create_directory $("$evidence_dir\エビデンス\$env" -replace "genkou", "現行" -replace "cloud", "クラウド")
 
-        $directory_name = "$function_dir\$env" -replace "genkou", "現行" -replace "cloud", "クラウド"
-        if ($(test-path -PathType Container $directory_name) -eq $False) { new-item -ItemType Directory $directory_name | out-null }
+        $compare_target_file = "$($work_dir)\$($pattern_no)_$($table_name).csv"
 
-        $output_file = "$($directory_name)\$($pattern_no)_$($table_name).csv"
+        $compare_target_files.add($env, $compare_target_file)
 
-        $output_file_path.add($env, $output_file)
-
-        $dump | Export-Csv $output_file -Encoding Default -NoTypeInformation
+        $dump | Export-Csv $compare_target_file -Encoding Default -NoTypeInformation
     }
 
     ##########################################################################
@@ -156,18 +155,18 @@ SELECT * FROM $table_name WHERE flssno = '$($settings.$env.flssno)'
 
     $template_full_path = "$(Split-Path -Parent $compare_tool_full_path)\00_ダウンロード_コンペアチェック表_テンプレート_縦比較.xlsx"
     
-    $input_genkou_file_full_path = Convert-Path ".\$($output_file_path.genkou)"
-    $input_cloud_file_full_path  = Convert-Path ".\$($output_file_path.cloud)"
+    $compare_target_genkou_file_full_path = Convert-Path ".\$($compare_target_files.genkou)"
+    $compare_target_cloud_file_full_path  = Convert-Path ".\$($compare_target_files.cloud)"
 
-    $output_result_full_path = "$(Split-Path -Parent $input_genkou_file_full_path | Split-Path -Parent)\コンペア"
+    $output_result_full_path = "$(Convert-Path $evidence_dir)エビデンス"
 
     if ($(test-path -PathType Container $output_result_full_path) -eq $False) { new-item -ItemType Directory $output_result_full_path | out-null }
 
     try {
         if ($e.Open($compare_tool_full_path)) {
             $e.SetValue(3,  2, $template_full_path)                         | Out-Null
-            $e.SetValue(5,  2, $input_genkou_file_full_path)                | Out-Null
-            $e.SetValue(7,  2, $input_cloud_file_full_path)                 | Out-Null
+            $e.SetValue(5,  2, $compare_target_genkou_file_full_path)       | Out-Null
+            $e.SetValue(7,  2, $compare_target_cloud_file_full_path)        | Out-Null
             $e.SetValue(9,  2, $output_result_full_path)                    | Out-Null
             $e.SetValue(10, 2, "$($pattern_no)_比較結果_$($table_name)")    | Out-Null
             $e.SetValue(11, 2, "0")                                         | Out-Null
@@ -177,7 +176,7 @@ SELECT * FROM $table_name WHERE flssno = '$($settings.$env.flssno)'
             }
             else {
                 error "コンペアに失敗しました。"
-                
+                exit -1
             }
         }
     }
@@ -213,17 +212,25 @@ SELECT * FROM $table_name WHERE flssno = '$($settings.$env.flssno)'
 <body>
     <table border=""1"">
         <thead>
+            <th>機能ID</th>
+            <th>機能名</th>
+            <th>テストパターンNo.</th>
             <th>現行処理時間</th>
             <th>クラウド処理時間</th>
-            <th>差分(秒)<br />クラウド - 現行</th>
-            <th>遅延率<br />クラウド / 現行</th>
+            <th>処理時間差分(秒)<br />クラウド - 現行</th>
+            <th>差分(秒)コメント<br />クラウド - 現行</th>
+            <th>遅延率コメント<br />クラウド / 現行</th>
         </thead>
         <tbody>
             <tr>
+                <td>$($function_id)</td>
+                <td>$($function_name)</td>
+                <td align=""right"">$($pattern_no)</td>
                 <td align=""center"">$($elapsed_time.genkou)</td>
                 <td align=""center"">$($elapsed_time.cloud)</td>
-                <td align=""right"" $bgcolor>$($time_message)</td>
-                <td align=""right"" $bgcolor>$($rate_message)</td>
+                <td align=""right"" $bgcolor>$($diff_time)</td>
+                <td$($bgcolor)>$($time_message)</td>
+                <td$($bgcolor)>$($rate_message)</td>
             </tr>
         </tbody>
     </table>
@@ -284,7 +291,7 @@ SELECT * FROM $table_name WHERE flssno = '$($settings.$env.flssno)'
         </tbody>
     </table>
 </body>
-</html>" | out-file -Encoding default "$($function_id)_$($function_name)\$($pattern_no)_処理時間比較.html"
+</html>" | out-file -Encoding default "$($function_id)_$($function_name)\$($pattern_no)\エビデンス\$($pattern_no)_処理時間比較.html"
 
     info "不要な一時ファイルを削除します。"
     remove-item temporary*

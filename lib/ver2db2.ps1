@@ -74,7 +74,7 @@ function table_is_exist($t_name) {
 
 function read_table_name() {
     while($True) {
-        $table_name = read-host "対象のテーブル名を入力してください "
+        $table_name = read-host "対象のテーブル名(物理名)を入力してください "
         $table_name = $table_name.trim().ToUpper()
 
         if ($table_name -eq "") {
@@ -136,7 +136,7 @@ function search_table_remarks($search_string) {
 
 function read_table_remarks() {
     while ($True) {
-        $table_name = read-host "検索するテーブル名を入力してください "
+        $table_name = read-host "検索するテーブル名(論理名)を入力してください "
         
         # テーブル名が入力されなかった場合、後続の処理を続行するように変更
         #if ($table_name -eq "") {
