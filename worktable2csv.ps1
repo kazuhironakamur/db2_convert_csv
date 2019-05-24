@@ -78,7 +78,9 @@ fetch first 1 rows only
         # ˆ—ŠÔ®Œ`
         if ($time.$env.strtime -eq "") { $start_time = $time.$env.bcksju  -replace "\.", ":" }
         else                           { $start_time = $time.$env.strtime -replace "\.", ":" }
-        $end_time =                                    $time.$env.endtime -replace "\.", ":"
+        
+        if ($time.$env.endtime -eq "") { $end_time = $time.$env.uptb__  -replace "\.", ":" }
+        else                           { $end_time = $time.$env.endtime -replace "\.", ":" }
 
         # ˆ—ŠÔŒvZ
         $elapsed_time.add($env, (get-date $end_time) - (get-date $start_time))
