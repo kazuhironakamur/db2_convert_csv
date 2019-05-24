@@ -315,7 +315,7 @@ fetch first 1 rows only
         </tbody>
     </table>
 </body>
-</html>" | out-file -Encoding default "$($function_id)_$($function_name)\$($pattern_no)_処理時間比較_$($table_name).html"
+</html>" | out-file -Encoding default "$($function_id)_$($function_name)\$($pattern_no)_処理時間比較.html"
 
     info "不要な一時ファイルを削除します。"
     remove-item temporary*
