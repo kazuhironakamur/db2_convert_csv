@@ -25,7 +25,7 @@ while ($true) {
         $found_tables | format-table -AutoSize -Property type, name, remarks
 
         info "検索処理が終了しました。"
-        info "終了する場合は、テーブル名を入力せずに[Enter]キーを押下してください。"
+        info "対象テーブルの情報が確認でき、次の処理に進む場合は、テーブル名を入力せずに[Enter]キーを押下してください。"
     }
 
     ##########################################################################
@@ -211,6 +211,11 @@ SELECT * FROM $table_name WHERE flssno = '$($settings.$env.flssno)'
     }
 
     "<html>
+<head>
+    <style type=""text/css"">
+        body { font-family:""ＭＳ ゴシック"", sans-serif; }
+    </style>
+</head>
 <body>
     <table border=""1"">
         <thead>

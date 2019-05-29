@@ -25,7 +25,7 @@ while ($true) {
         $found_tables | format-table -AutoSize -Property type, name, remarks
 
         info "検索処理が終了しました。"
-        info "終了する場合は、テーブル名を入力せずに[Enter]キーを押下してください。"
+        info "対象テーブルの情報が確認でき、次の処理に進む場合は、テーブル名を入力せずに[Enter]キーを押下してください。"
     }
 
     ##########################################################################
@@ -206,7 +206,7 @@ from fctlsp00
 where userid = '$($settings.$env.user_id)'
 and wstmid = '$($settings.$env.session_id)'
 and mtdnm = 'ent'
-and resurl like '/$($function_id_for_query_string)%?redirect=true'
+and resurl like '/$($function_id_for_query_string)%'
 order by sttime desc
 fetch first 1 rows only
 "@
@@ -257,6 +257,11 @@ fetch first 1 rows only
     }
 
     "<html>
+<head>
+    <style type=""text/css"">
+        body { font-family:""ＭＳ ゴシック"", sans-serif; }
+    </style>
+</head>
 <body>
     <table border=""1"">
         <thead>
