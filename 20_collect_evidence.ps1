@@ -2,7 +2,7 @@ $ErrorActionPreference = "Stop"
 
 . .\lib\display.ps1
 
-$Host.ui.RawUI.WindowTitle = "ファイル収集用"
+$Host.ui.RawUI.WindowTitle = "エビデンスファイル収集"
 
 $IMAGE_EXTENSIONS = @("*.jpg", "*.png")
 $OTHER_EXTENSIONS = @("*.pdf", "*.csv", "*.xlsx")
@@ -21,33 +21,12 @@ $target_dirs = @(
     "$env:USERPROFILE\downloads"
 )
 
-$function_dir_pattern = "[A-Z]_[A-Z]{2}_[0-9]{4}_*"
-$function_dir = Get-ChildItem -Directory | Select-String -pattern $function_dir_pattern | Sort-Object -Descending LastWriteTime | Select-Object -First 1
-$pattern_dir  = Get-ChildItem -Directory $function_dir | Sort-Object -Descending LastWriteTime | Select-Object -First 1
-if ($pattern_dir -eq $null) {
-    error "エビデンス格納先ディレクトリが見つかりません。(機能ID_機能名\パターン番号\)"
-    read-host "[Enter]キーで終了します。"
-    exit -1
-}
-
-$genkou_dir = "$function_dir\$pattern_dir\エビデンス\01_現行"
-if (!(test-path $genkou_dir)) {
-    error "エビデンス格納先ディレクトリが見つかりません。(現行 = $genkou_dir)"
-    read-host "[Enter]キーで終了します。"
-    exit -1
-}
-
-$cloud_dir = "$function_dir\$pattern_dir\エビデンス\02_クラウド"
-if (!(test-path $cloud_dir)) {
-    error "エビデンス格納先ディレクトリが見つかりません。(クラウド = $cloud_dir)"
-    read-host "[Enter]キーで終了します。"
-    exit -1
-}
+$evidence_dirs = search_latest_evidence_directorires
 
 ""
 info "以下のディレクトリへエビデンスを収集します。"
-"現行エビデンス収集先     : $genkou_dir"
-"クラウドエビデンス収集先 : $cloud_dir"
+"現行エビデンス収集先     : $($evidence_dirs.genkou)"
+"クラウドエビデンス収集先 : $($evidence_dirs.cloud)"
 ""
 read-host "収集先ディレクトリに間違いがなければ、[Enter]キーで処理を継続してください。間違っている場合はCtrl+Cなどでプログラムを終了してください。 "
 
@@ -95,11 +74,11 @@ foreach ($d in $target_dirs) {
 
         if ($to -eq 'g') {
             info "現行フォルダーへ収集します。"
-            move_and_rename_file $f $genkou_dir
+            move_and_rename_file $f $evidence_dirs.genkou
         }
         elseif ($to -eq 'c') {
             info "クラウドフォルダーへ収集します。"
-            move_and_rename_file $f $cloud_dir
+            move_and_rename_file $f $evidence_dirs.cloud
         }
         elseif ($to -eq 'x') {
             info "ファイルを破棄します。"

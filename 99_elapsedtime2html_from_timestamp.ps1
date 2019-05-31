@@ -9,7 +9,7 @@ $ErrorActionPreference = "Stop"
 
 $compare_tool_path = ".\コンペアツール\コンペアチェック表作成ツールＤＬ_縦比較版_改修10.xlsm"
 
-$Host.ui.RawUI.WindowTitle = "テーブル出力用"
+$Host.ui.RawUI.WindowTitle = "処理時間比較 URLに起動IDが含まれていない場合に使用"
 
 $function_id = $null
 
@@ -20,12 +20,15 @@ Write-Host "指定された機能IDの機能名は 【 $function_name 】 です。"
 $pattern_no = read_pattern_no
 Write-Host "パターン番号は 【 $pattern_no 】 を使用します。"
 
+create_evidence_directories $function_id $function_name $pattern_no
+
 $today = get-date -format "yyyy-MM-dd"
 $timestamps = New-Object System.Collections.Hashtable
 
 foreach ($env in @('genkou', 'cloud')) {
     while ($true) {
         $msg = $($env -replace 'genkou', '現行' -replace 'cloud', 'クラウド') + "の時刻情報を入力してください "
+        $t = $t.trim()
         $t = Read-Host $msg
 
         if ($t -match "^([0-1][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]$") {

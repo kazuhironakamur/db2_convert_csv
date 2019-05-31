@@ -42,6 +42,8 @@ while ($true) {
     $pattern_no = read_pattern_no
     Write-Host "パターン番号は 【 $pattern_no 】 を使用します。"
 
+    create_evidence_directories $function_id $function_name $pattern_no
+
     ##########################################################################
     info "ファイル作成指示番号を採取します。"
     ##########################################################################
@@ -53,12 +55,16 @@ while ($true) {
         "fldlplndate", "fldlenddate", "fldlendtime", "bcksdc", "bcksju", "bcktbg", "bckpid", "delkb",
         "addy__", "addb__", "adid__", "awid__", "atcd__", "ausr__", "updy__", "uptb__", "upid__", "uwid__", "utcd__", "uusr__")
 
+    $headers = @(
+        "flssno", "flssoyano", "knmsid", "kickpgnm", "dspsrnm", "csvclm1", "csvvlm5", "sijidate", "sijitime", "strdate", "strtime", "enddate", "endtime", "fldspnm", "bcksju", "uptb__"
+    )
+
     $time = New-Object System.Collections.Hashtable
     $elapsed_time = New-Object System.Collections.Hashtable
 
     foreach ($env in @('genkou', 'cloud')) {
         $query = @"
-select * from fmmljp00
+select $($headers -join ",") from fmmljp00
 where csvclm1 = '$table_name'
 and ausr__ = '$($settings.$env.user_id)'
 and awid__ = '$($settings.$env.session_id)'
@@ -76,6 +82,8 @@ fetch first 1 rows only
         write-host "読み取ったファイル作成指示番号: 環境: $read_env ファイル作成指示番号: $($fmmljp00.flssno)"
 
         $time.add($env, $fmmljp00)
+
+        $time.$env
 
         # 処理時間整形
         if ($time.$env.strtime -eq "") { $start_time = $time.$env.bcksju  -replace "\.", ":" }
@@ -138,8 +146,6 @@ SELECT * FROM $table_name WHERE flssno = '$($settings.$env.flssno)'
         # 最終的なCSVファイルを作成する
         $evidence_dir = "$($function_id)_$($function_name)\$($pattern_no)\"
         $work_dir = "$($evidence_dir)\WORK\$env" -replace "genkou", "現行" -replace "cloud", "クラウド"
-        create_directory $work_dir
-        create_directory $("$evidence_dir\エビデンス\$env" -replace "genkou", "01_現行" -replace "cloud", "02_クラウド")
 
         $compare_target_file = "$($work_dir)\$($pattern_no)_$($table_name).csv"
 
@@ -192,116 +198,8 @@ SELECT * FROM $table_name WHERE flssno = '$($settings.$env.flssno)'
     ##########################################################################
     info "処理時間を比較します"
     ##########################################################################
-
-    $diff_time = [Math]::Abs($elapsed_time.cloud.TotalSeconds - $elapsed_time.genkou.TotalSeconds)
-    $rate_time = [Math]::Abs([Math]::Truncate(($elapsed_time.cloud.TotalSeconds / $elapsed_time.genkou.TotalSeconds - 1) * 100))
-
-    $bgcolor = " bgcolor=""lightskyblue"""
-    $time_message = "クラウドのほうが $diff_time 秒 速い"
-    $rate_message = "クラウドのほうが $rate_time % 速い"
-    if ($elapsed_time.cloud.TotalSeconds -gt $elapsed_time.genkou.TotalSeconds){
-        $bgcolor = " bgcolor=""red"""
-        $time_message = "クラウドのほうが $diff_time 秒 遅い"
-        $rate_message = "クラウドのほうが $rate_time % 遅い"    
-    }
-    elseif ($elapsed_time.cloud.TotalSeconds -eq $elapsed_time.genkou.TotalSeconds) {
-        $bgcolor = ""
-        $time_message = "現行とクラウドは秒単位で同程度"
-        $rate_message = "現行とクラウドは秒単位で同程度" 
-    }
-
-    "<html>
-<head>
-    <style type=""text/css"">
-        body { font-family:""ＭＳ ゴシック"", sans-serif; }
-    </style>
-</head>
-<body>
-    <table border=""1"">
-        <thead>
-            <th>機能ID</th>
-            <th>機能名</th>
-            <th>テストパターンNo.</th>
-            <th>現行処理時間</th>
-            <th>クラウド処理時間</th>
-            <th>処理時間差分(秒)<br />クラウド - 現行</th>
-            <th>差分(秒)コメント<br />クラウド - 現行</th>
-            <th>遅延率コメント<br />クラウド / 現行</th>
-        </thead>
-        <tbody>
-            <tr>
-                <td>$($function_id)</td>
-                <td>$($function_name)</td>
-                <td align=""right"">$($pattern_no)</td>
-                <td align=""center"">$($elapsed_time.genkou)</td>
-                <td align=""center"">$($elapsed_time.cloud)</td>
-                <td align=""right"" $bgcolor>$($diff_time)</td>
-                <td$($bgcolor)>$($time_message)</td>
-                <td$($bgcolor)>$($rate_message)</td>
-            </tr>
-        </tbody>
-    </table>
-    <br />
-    <table border=""1"">
-        <thead>
-            <th>環境</th>
-            <th>flssno</th>
-            <th>flssoyano</th>
-            <th>knmsid</th>
-            <th>kickpgnm</th>
-            <th>dspsrnm</th>
-            <th>csvclm1</th>
-            <th>csvvlm5</th>
-            <th>sijidate</th>
-            <th>sijitime</th>
-            <th>strdate</th>
-            <th>strtime</th>
-            <th>enddate</th>
-            <th>endtime</th>
-            <th>fldspnm</th>
-        </thead>
-        <tbody>
-            <tr>
-                <td>現行</td>
-                <td>$($time.genkou.flssno)</td>
-                <td>$($time.genkou.flssoyano)</td>
-                <td>$($time.genkou.knmsid)</td>
-                <td>$($time.genkou.kickpgnm)</td>
-                <td>$($time.genkou.dspsrnm)</td>
-                <td>$($time.genkou.csvclm1)</td>
-                <td>$($time.genkou.csvvlm5)</td>
-                <td>$($time.genkou.sijidate)</td>
-                <td>$($time.genkou.sijitime)</td>
-                <td>$($time.genkou.strdate)</td>
-                <td>$($time.genkou.strtime)</td>
-                <td>$($time.genkou.enddate)</td>
-                <td>$($time.genkou.endtime)</td>
-                <td>$($time.genkou.fldspnm)</td>
-            </tr>
-            <tr>
-                <td>クラウド</td>
-                <td>$($time.cloud.flssno)</td>
-                <td>$($time.cloud.flssoyano)</td>
-                <td>$($time.cloud.knmsid)</td>
-                <td>$($time.cloud.kickpgnm)</td>
-                <td>$($time.cloud.dspsrnm)</td>
-                <td>$($time.cloud.csvclm1)</td>
-                <td>$($time.cloud.csvvlm5)</td>
-                <td>$($time.cloud.sijidate)</td>
-                <td>$($time.cloud.sijitime)</td>
-                <td>$($time.cloud.strdate)</td>
-                <td>$($time.cloud.strtime)</td>
-                <td>$($time.cloud.enddate)</td>
-                <td>$($time.cloud.endtime)</td>
-                <td>$($time.cloud.fldspnm)</td>
-            </tr>
-        </tbody>
-    </table>
-</body>
-</html>" | out-file -Encoding default "$($function_id)_$($function_name)\$($pattern_no)\エビデンス\$($pattern_no)_処理時間比較.html"
-
-    info "不要な一時ファイルを削除します。"
-    remove-item temporary*
+    $html = generate_elaplsed_times_html $function_id $function_name $pattern_no $elapsed_time $time
+    $html | out-file -Encoding default "$($function_id)_$($function_name)\$($pattern_no)\エビデンス\$($pattern_no)_処理時間比較.html"
 
     info "処理が終了しました。"
     info "作成されたデータと処理時間.htmlファイルを確認してください。"

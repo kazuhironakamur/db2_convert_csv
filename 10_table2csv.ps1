@@ -42,6 +42,8 @@ while ($true) {
     $pattern_no = read_pattern_no
     Write-Host "パターン番号は 【 $pattern_no 】 を使用します。"
 
+    create_evidence_directories $function_id $function_name $pattern_no
+
     ##########################################################################
     info "対象テーブルの直近タイムスタンプ取得します。"
     ##########################################################################
@@ -141,8 +143,6 @@ and addy__ = '$($timestamps.$env.insert_date)' and addb__ = '$($timestamps.$env.
         # 最終的なCSVファイルを作成する
         $evidence_dir = "$($function_id)_$($function_name)\$($pattern_no)\"
         $work_dir = "$($evidence_dir)\WORK\$env" -replace "genkou", "現行" -replace "cloud", "クラウド"
-        create_directory $work_dir
-        create_directory $("$evidence_dir\エビデンス\$env" -replace "genkou", "01_現行" -replace "cloud", "02_クラウド")
 
         $compare_target_file = "$($work_dir)\$($pattern_no)_$($table_name).csv"
 
@@ -239,100 +239,8 @@ fetch first 1 rows only
         $elapsed_time.add($env, $e - $s)
     }
 
-    $diff_time = [Math]::Abs($elapsed_time.cloud.TotalSeconds - $elapsed_time.genkou.TotalSeconds)
-    $rate_time = [Math]::Abs([Math]::Truncate(($elapsed_time.cloud.TotalSeconds / $elapsed_time.genkou.TotalSeconds - 1) * 100))
-
-    $bgcolor = " bgcolor=""lightskyblue"""
-    $time_message = "クラウドのほうが $diff_time 秒 速い"
-    $rate_message = "クラウドのほうが $rate_time % 速い"
-    if ($elapsed_time.cloud.TotalSeconds -gt $elapsed_time.genkou.TotalSeconds){
-        $bgcolor = " bgcolor=""red"""
-        $time_message = "クラウドのほうが $diff_time 秒 遅い"
-        $rate_message = "クラウドのほうが $rate_time % 遅い"
-    }
-    elseif ($elapsed_time.cloud.TotalSeconds -eq $elapsed_time.genkou.TotalSeconds) {
-        $bgcolor = ""
-        $time_message = "現行とクラウドは秒単位で同程度"
-        $rate_message = "現行とクラウドは秒単位で同程度" 
-    }
-
-    "<html>
-<head>
-    <style type=""text/css"">
-        body { font-family:""ＭＳ ゴシック"", sans-serif; }
-    </style>
-</head>
-<body>
-    <table border=""1"">
-        <thead>
-            <th>機能ID</th>
-            <th>機能名</th>
-            <th>テストパターンNo.</th>
-            <th>現行処理時間</th>
-            <th>クラウド処理時間</th>
-            <th>処理時間差分(秒)<br />クラウド - 現行</th>
-            <th>差分(秒)コメント<br />クラウド - 現行</th>
-            <th>遅延率コメント<br />クラウド / 現行</th>
-        </thead>
-        <tbody>
-            <tr>
-                <td>$($function_id)</td>
-                <td>$($function_name)</td>
-                <td align=""right"">$($pattern_no)</td>
-                <td align=""center"">$($elapsed_time.genkou)</td>
-                <td align=""center"">$($elapsed_time.cloud)</td>
-                <td align=""right"" $bgcolor>$($diff_time)</td>
-                <td$($bgcolor)>$($time_message)</td>
-                <td$($bgcolor)>$($rate_message)</td>
-            </tr>
-        </tbody>
-    </table>
-    <br />
-    <table border=""1"">
-        <thead>
-            <th>環境</th>
-            <th>srdate</th>
-            <th>sttime</th>
-            <th>edtime</th>
-            <th>srtime</th>
-            <th>userid</th>
-            <th>wstmid</th>
-            <th>actnm</th>
-            <th>mtdnm</th>
-            <th>resurl</th>
-        </thead>
-        <tbody>
-            <tr>
-                <td>現行</td>
-                <td>$($was_log.genkou.srdate)</td>
-                <td>$($was_log.genkou.sttime)</td>
-                <td>$($was_log.genkou.edtime)</td>
-                <td>$($was_log.genkou.srtime)</td>
-                <td>$($was_log.genkou.userid)</td>
-                <td>$($was_log.genkou.wstmid)</td>
-                <td>$($was_log.genkou.actnm)</td>
-                <td>$($was_log.genkou.mtdnm)</td>
-                <td>$($was_log.genkou.resurl)</td>
-            </tr>
-            <tr>
-                <td>クラウド</td>
-                <td>$($was_log.cloud.srdate)</td>
-                <td>$($was_log.cloud.sttime)</td>
-                <td>$($was_log.cloud.edtime)</td>
-                <td>$($was_log.cloud.srtime)</td>
-                <td>$($was_log.cloud.userid)</td>
-                <td>$($was_log.cloud.wstmid)</td>
-                <td>$($was_log.cloud.actnm)</td>
-                <td>$($was_log.cloud.mtdnm)</td>
-                <td>$($was_log.cloud.resurl)</td>
-            </tr>
-        </tbody>
-    </table>
-</body>
-</html>" | out-file -Encoding default "$($function_id)_$($function_name)\$($pattern_no)\エビデンス\$($pattern_no)_処理時間比較.html"
-
-    info "不要な一時ファイルを削除します。"
-    remove-item temporary*
+    $html = generate_elaplsed_times_html $function_id $function_name $pattern_no $elapsed_time $was_log
+    $html | out-file -Encoding default "$($function_id)_$($function_name)\$($pattern_no)\エビデンス\$($pattern_no)_処理時間比較.html"
 
     info "処理が終了しました。"
     info "作成されたデータと処理時間.htmlファイルを確認してください。"
